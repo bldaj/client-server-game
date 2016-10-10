@@ -6,7 +6,7 @@ order = random.choice([1, 2])
 game_points = {'First player': 0, 'Second player': 0}
 foul = {'First player': 0, 'Second player': 0}
 message = 'Your turn'
-error = 'This word has been'
+error = ['This word has been', 'Your word not composed from symbol previous word']
 flag = False
 
 
@@ -30,7 +30,7 @@ def send_answer(order, data):
 
 
 def check_similar_sym(word, archive):
-    previous_word = list(archive.pop())
+    previous_word = list(archive[-1])
     curr_word = list(word)
     previous_word.sort()
     curr_word.sort()
@@ -121,9 +121,10 @@ print('Player_2 has connected', addr2)
 while True:
     data = exchange_data(order, message)
 
-    if data == '-ex':
+    if data in '-ex':
         check_winner(game_points)
         close_game()
+        break
 
     elif len(archive) == 0:
         archive.append(data)
@@ -137,7 +138,7 @@ while True:
                 close_game()
                 flag = True
                 break
-            data = exchange_data(order, error)
+            data = exchange_data(order, error[0])
 
         if flag:
             break
@@ -147,7 +148,18 @@ while True:
         game_points = counter_point(order, game_points)
         order = toggle_order(order)
 
-    elif check_similar_sym(data, archive) == 'Ok':
+    else:
+        while check_similar_sym(data, archive) != 'Ok':
+            foul = count_foul(order, foul)
+            if check_foul(foul) == 'Game over':
+                close_game()
+                flag = True
+                break
+            data = exchange_data(order, error[1])
+
+        if flag:
+            break
+
         archive.append(data)
         send_answer(order, data)
         game_points = counter_point(order, game_points)

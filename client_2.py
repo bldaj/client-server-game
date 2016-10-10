@@ -1,7 +1,7 @@
 import socket
 
 server_data = ''
-office_message = ['Your turn', 'This word has been']
+office_message = ['Your turn', 'This word has been', 'Your word not composed from symbol previous word']
 over_game = ['You have lost the game!', 'Player 1 has lost the game', 'Player 2 has lost the game']
 winner = ["You're the winner!", "Player 1 wins!", "Player 2 wins!", "Drawn game"]
 
@@ -19,7 +19,7 @@ while True:
     elif server_data in office_message:
         print(server_data)
         sock.send(input('Enter your word: ').encode())
-    
+
     elif server_data in over_game:
         print(server_data)
 

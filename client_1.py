@@ -1,7 +1,7 @@
 import socket
 
 server_data = ''
-office_message = ['Your turn', 'This word has been']
+office_message = ['Your turn', 'This word has been', 'Your word not composed from symbol previous word']
 over_game = ['You have lost the game!', 'Player 1 has lost the game', 'Player 2 has lost the game']
 winner = ["You're the winner!", "Player 1 wins!", "Player 2 wins!", "Drawn game"]
 
