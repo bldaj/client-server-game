@@ -1,101 +1,100 @@
 import socket
 import random
 
-archive = []
-order = random.choice([1, 2])
+wordlist = []
+player_priority = random.choice([1, 2])
 game_points = {'First player': 0, 'Second player': 0}
-foul = {'First player': 0, 'Second player': 0}
+number_of_fouls = {'First player': 0, 'Second player': 0}
 message = 'Your turn'
-error = ['This word has been', 'Your word not composed from symbol previous word']
+error_message = ['This word has been', 'Your word not composed from symbol of previous word']
 flag = False
 
 
-def exchange_data(order, message):
-    if order == 1:
+def exchange_data(player_priority, message):
+    if player_priority == 1:
         client1.send(message.encode())
-        data = client1.recv(1024).decode()
+        player_word = client1.recv(1024).decode()
 
-    elif order == 2:
+    elif player_priority == 2:
         client2.send(message.encode())
-        data = client2.recv(1024).decode()
+        player_word = client2.recv(1024).decode()
 
-    return data
-
-
-def send_answer(order, data):
-    if order == 1:
-        client2.send(data.encode())
-    elif order == 2:
-        client1.send(data.encode())
+    return player_word
 
 
-def check_similar_sym(word, archive):
-    previous_word = list(archive[-1])
-    curr_word = list(word)
+def send_answer_player(player_priority, player_word):
+    if player_priority == 1:
+        client2.send(player_word.encode())
+    elif player_priority == 2:
+        client1.send(player_word.encode())
+
+
+def check_similar_sym(word, wordlist):
+    previous_word = list(wordlist[-1])
+    current_word = list(word)
     previous_word.sort()
-    curr_word.sort()
-    res = len(previous_word) - len(curr_word)
+    current_word.sort()
+    res = len(previous_word) - len(current_word)
 
-    for sym in curr_word:
+    for sym in current_word:
         if sym in previous_word:
             previous_word.remove(sym)
             if len(previous_word) == res:
                 return 'Ok'
 
 
-def toggle_order(order):
-    if order == 1:
-        order = 2
+def toggle_player_priority(player_priority):
+    if player_priority == 1:
+        player_priority = 2
+    elif player_priority == 2:
+        player_priority = 1
 
-    elif order == 2:
-        order = 1
-
-    return order
+    return player_priority
 
 
-def counter_point(order, game_points):
-    if order == 1:
+def counter_game_points(player_priority, game_points):
+    if player_priority == 1:
         game_points['First player'] += 1
-    elif order == 2:
+    elif player_priority == 2:
         game_points['Second player'] += 1
 
     return game_points
 
 
-def check_winner(game_points):
-    winner = ["You're the winner!", "Player 1 wins!", "Player 2 wins!", "Drawn game"]
+def determine_winner(game_points):
+    message = ["You're the winner!", "Player 1 wins!", "Player 2 wins!", "Drawn game"]
 
     if game_points['First player'] > game_points['Second player']:
-        client1.send(winner[0].encode())
-        client2.send(winner[1].encode())
+        client1.send(message[0].encode())
+        client2.send(message[1].encode())
 
     elif game_points['First player'] < game_points['Second player']:
-        client1.send(winner[2].encode())
-        client2.send(winner[0].encode())
+        client1.send(message[2].encode())
+        client2.send(message[0].encode())
 
     elif game_points['First player'] == game_points['Second player']:
-        client1.send(winner[3].encode())
-        client2.send(winner[3].encode())
+        client1.send(message[3].encode())
+        client2.send(message[3].encode())
 
 
-def count_foul(order, foul):
-    if order == 1:
-       foul['First player'] += 1
-    elif order == 2:
-        foul['Second player'] += 1
+def counter_fouls(player_priority, number_of_fouls):
+    if player_priority == 1:
+        number_of_fouls['First player'] += 1
+    elif player_priority == 2:
+        number_of_fouls['Second player'] += 1
 
-    return foul
+    return number_of_fouls
 
 
-def check_foul(foul):
+def is_player_lose_game(number_of_fouls):
     message = ['You have lost the game!', 'Player 1 has lost the game', 'Player 2 has lost the game']
 
-    if foul['First player'] == 3:
+    if number_of_fouls['First player'] == 3:
         client1.send(message[0].encode())
         client2.send(message[1].encode())
         return 'Game over'
 
-    elif foul['Second player'] == 3:
+    elif number_of_fouls['Second player'] == 3:
         client2.send(message[0].encode())
         client1.send(message[2].encode())
         return 'Game over'
@@ -115,52 +114,52 @@ sock.listen(2)
 client1, addr1 = sock.accept()
 client2, addr2 = sock.accept()
 
-print('Player_1 has connected', addr1)
-print('Player_2 has connected', addr2)
+print('Player 1 has connected', addr1)
+print('Player 2 has connected', addr2)
 
 while True:
-    data = exchange_data(order, message)
+    player_word = exchange_data(player_priority, message)
 
-    if data in '-ex':
-        check_winner(game_points)
+    if player_word in '-ex':
+        determine_winner(game_points)
         close_game()
         break
 
-    elif len(archive) == 0:
-        archive.append(data)
-        send_answer(order, data)
-        order = toggle_order(order)
+    elif len(wordlist) == 0:
+        wordlist.append(player_word)
+        send_answer_player(player_priority, player_word)
+        player_priority = toggle_player_priority(player_priority)
 
-    elif data in archive:
-        while data in archive:
-            foul = count_foul(order, foul)
-            if check_foul(foul) == 'Game over':
+    elif player_word in wordlist:
+        while player_word in wordlist:
+            number_of_fouls = counter_fouls(player_priority, number_of_fouls)
+            if is_player_lose_game(number_of_fouls) == 'Game over':
                 close_game()
                 flag = True
                 break
-            data = exchange_data(order, error[0])
+            player_word = exchange_data(player_priority, error_message[0])
 
         if flag:
             break
 
-        archive.append(data)
-        send_answer(order, data)
-        game_points = counter_point(order, game_points)
-        order = toggle_order(order)
+        wordlist.append(player_word)
+        send_answer_player(player_priority, player_word)
+        game_points = counter_game_points(player_priority, game_points)
+        player_priority = toggle_player_priority(player_priority)
 
     else:
-        while check_similar_sym(data, archive) != 'Ok':
-            foul = count_foul(order, foul)
-            if check_foul(foul) == 'Game over':
+        while check_similar_sym(player_word, wordlist) != 'Ok':
+            number_of_fouls = counter_fouls(player_priority, number_of_fouls)
+            if is_player_lose_game(number_of_fouls) == 'Game over':
                 close_game()
                 flag = True
                 break
-            data = exchange_data(order, error[1])
+            player_word = exchange_data(player_priority, error_message[1])
 
         if flag:
             break
 
-        archive.append(data)
-        send_answer(order, data)
-        game_points = counter_point(order, game_points)
-        order = toggle_order(order)
+        wordlist.append(player_word)
+        send_answer_player(player_priority, player_word)
+        game_points = counter_game_points(player_priority, game_points)
+        player_priority = toggle_player_priority(player_priority)
