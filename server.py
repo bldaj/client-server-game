@@ -100,6 +100,21 @@ def is_player_lose_game(number_of_fouls):
         return 'Game over'
 
 
+def is_empty_wordlist(wordlist):
+    if len(wordlist) == 0:
+        return True
+    else:
+        return False
+
+
+def turn_handler(wordlist, player_priority, player_word):
+    wordlist.append(player_word)
+    send_answer_player(player_priority, player_word)
+    player_priority = toggle_player_priority(player_priority)
+
+    return wordlist, player_priority
+
+
 def close_game():
     client1.close()
     client2.close()
@@ -125,10 +140,8 @@ while True:
         close_game()
         break
 
-    elif len(wordlist) == 0:
-        wordlist.append(player_word)
-        send_answer_player(player_priority, player_word)
-        player_priority = toggle_player_priority(player_priority)
+    elif is_empty_wordlist(wordlist):
+        wordlist, player_priority = turn_handler(wordlist, player_priority, player_word)
 
     elif player_word in wordlist:
         while player_word in wordlist:
@@ -142,10 +155,8 @@ while True:
         if flag:
             break
 
-        wordlist.append(player_word)
-        send_answer_player(player_priority, player_word)
+        wordlist, player_priority = turn_handler(wordlist, player_priority, player_word)
         game_points = counter_game_points(player_priority, game_points)
-        player_priority = toggle_player_priority(player_priority)
 
     else:
         while check_similar_sym(player_word, wordlist) != 'Ok':
@@ -159,7 +170,5 @@ while True:
         if flag:
             break
 
-        wordlist.append(player_word)
-        send_answer_player(player_priority, player_word)
+        wordlist, player_priority = turn_handler(wordlist, player_priority, player_word)
         game_points = counter_game_points(player_priority, game_points)
-        player_priority = toggle_player_priority(player_priority)
